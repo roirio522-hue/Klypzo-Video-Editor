@@ -3,7 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Klypzo - AI Precision Video Editor</title>
+    
+    <title>Klypzo - AI Precision Video Editor | Create Viral Shorts & Reels</title>
+    <meta name="description" content="Klypzo is a high-precision AI video editor that converts horizontal videos into viral shorts and reels. Automated framing, captions, and social media optimization.">
+    <meta name="keywords" content="Klypzo, video editor, AI video tools, vertical video converter, viral shorts creator, reels editor, online video cropper, video automation, Rafid Ahammed">
+    <meta name="author" content="Rafid Ahammed">
+    <meta name="robots" content="index, follow">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://roirio522-hue.github.io/Klypzo-Video-Editor/">
+    <meta property="og:title" content="Klypzo - AI Precision Video Editor">
+    <meta property="og:description" content="Scale your social media growth by converting horizontal videos into perfect viral shorts with Klypzo.">
+    <meta property="og:image" content="https://roirio522-hue.github.io/Klypzo-Video-Editor/og-image.jpg">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://roirio522-hue.github.io/Klypzo-Video-Editor/">
+    <meta property="twitter:title" content="Klypzo - AI Precision Video Editor">
+    <meta property="twitter:description" content="Automate your video workflow and create high-quality social media clips instantly.">
+    <meta property="twitter:image" content="https://roirio522-hue.github.io/Klypzo-Video-Editor/og-image.jpg">
+    
+    <link rel="canonical" href="https://roirio522-hue.github.io/Klypzo-Video-Editor/" />
     <style>
         /* আপনার মূল স্টাইল (১০০% অপরিবর্তিত) */
         :root { --primary: #00f2fe; --accent: #4facfe; --bg: #0b0e14; }
@@ -221,11 +240,10 @@
             </div>
         </div>
     </div>
-</div></div></div></div></div></div></div></div></div></div></div></div>
+</div>
     <div class="footer-copyright">
         © 2026 <b>Klypzo</b> | Designed by <b>RAFID AHAMMED</b>
     </div>
-</div>
 
 <script>
     const videoInput = document.getElementById('videoInput');
@@ -301,21 +319,18 @@
         context.fillText(line, x, y);
     }
 
-    // বাটনগুলোর পজিশন ক্যালকুলেশন আপডেট (বাকি সব কোড সেম)
     function drawAnimatedButtons(context, canvasW, canvasH, time) {
         const scale = 1 + Math.sin(time * 0.01) * 0.05; 
         const btnW = 160;
         const btnH = 60;
         const margin = 25;
-        const bottomY = canvasH - margin - (btnH/2); // একেবারে নিচে
+        const bottomY = canvasH - margin - (btnH/2); 
 
         context.textBaseline = "middle";
         context.textAlign = "center";
         context.font = "bold 24px Arial";
 
-        // YouTube Pack
         if(document.getElementById('ytOptions').checked) {
-            // বাম পাশে SUBSCRIBE
             context.save();
             context.translate(margin + btnW/2, bottomY);
             context.scale(scale, scale);
@@ -323,7 +338,6 @@
             context.fillStyle = "white"; context.fillText("SUBSCRIBE", 0, 0);
             context.restore();
 
-            // ডান পাশে LIKE
             context.save();
             context.translate(canvasW - margin - btnW/2, bottomY);
             context.scale(scale, scale);
@@ -332,9 +346,7 @@
             context.restore();
         }
 
-        // Facebook Pack
         if(document.getElementById('fbOptions').checked) {
-            // বাম পাশে FOLLOW
             context.save();
             context.translate(margin + btnW/2, bottomY);
             context.scale(scale, scale);
@@ -342,7 +354,6 @@
             context.fillStyle = "white"; context.fillText("FOLLOW", 0, 0);
             context.restore();
 
-            // ডান পাশে SHARE
             context.save();
             context.translate(canvasW - margin - btnW/2, bottomY);
             context.scale(scale, scale);
