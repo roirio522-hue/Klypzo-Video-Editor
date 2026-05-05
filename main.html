@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klypzo - AI Precision Video Editor</title>
+    <style>
+        /* আপনার মূল স্টাইল (১০০% অপরিবর্তিত) */
+        :root { --primary: #00f2fe; --accent: #4facfe; --bg: #0b0e14; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: #fff; margin: 0; padding: 15px; text-align: center; }
+        
+        .app-card { max-width: 480px; margin: auto; background: #161b22; padding: 25px; border-radius: 24px; border: 1px solid #30363d; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        
+        h2 { color: var(--primary); margin-bottom: 25px; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .upload-section { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin-bottom: 20px; 
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+        }
+
+        .input-box { text-align: left; margin-bottom: 15px; width: 100%; }
+        label { font-size: 12px; color: #8b949e; display: block; margin-bottom: 5px; font-weight: 600; }
+        
+        input, select, button { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #30363d; background: #0d1117; color: #fff; font-size: 14px; outline: none; box-sizing: border-box; }
+        
+        /* কালার ইনপুট স্টাইল */
+        input[type="color"] { padding: 2px; height: 42px; cursor: pointer; width: 50px; flex-shrink: 0; }
+
+        .btn-panel { display: flex; gap: 10px; background: #0d1117; padding: 10px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #30363d; justify-content: center; }
+        .btn-panel label { font-size: 11px; color: #fff; display: flex; align-items: center; gap: 5px; cursor: pointer; margin-bottom: 0; }
+        .btn-panel input { width: 15px; height: 15px; cursor: pointer; }
+
+        button#startBtn { background: linear-gradient(45deg, #00f2fe, #4facfe); border: none; color: #000; font-weight: bold; cursor: pointer; margin-top: 15px; height: 50px; font-size: 16px; transition: 0.3s ease; }
+        button#startBtn:hover:not(:disabled) { transform: scale(1.02); box-shadow: 0 0 20px rgba(0, 242, 254, 0.4); }
+        button:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+
+        #focusArea { display: none; margin-top: 25px; border-top: 2px solid #30363d; padding-top: 20px; }
+        .nav-btns { display: flex; gap: 8px; margin-bottom: 15px; }
+        .nav-btns button { padding: 10px; font-size: 12px; background: #21262d; border: 1px solid #30363d; flex: 1; transition: 0.2s; }
+        .nav-btns button:hover { background: #30363d; }
+
+        .preview-container { position: relative; width: 100%; aspect-ratio: 9/16; background: #000; border-radius: 15px; overflow: hidden; border: 2px solid var(--primary); margin: auto; }
+        #previewVideo { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); height: 100%; width: auto; max-width: none; pointer-events: none; }
+
+        .slider-group { margin-top: 15px; background: #0d1117; padding: 15px; border-radius: 15px; border: 1px solid #21262d; }
+        .slider-item { margin-bottom: 15px; text-align: left; }
+        .slider-item label { color: var(--primary); font-size: 11px; text-transform: uppercase; display: flex; justify-content: space-between; }
+        
+        input[type="range"] { appearance: none; height: 6px; background: #333; border-radius: 5px; margin-top: 8px; width: 100%; }
+        input[type="range"]::-webkit-slider-thumb { appearance: none; width: 22px; height: 22px; background: var(--primary); border-radius: 50%; cursor: pointer; border: 3px solid #fff; }
+
+        .progress-area { display: none; margin-top: 20px; }
+        .track { height: 8px; background: #30363d; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; width: 0%; background: var(--primary); transition: 0.1s linear; }
+
+        .output-grid { margin-top: 30px; display: grid; gap: 15px; }
+        .clip-box { background: #21262d; padding: 10px; border-radius: 15px; border: 1px solid #30363d; animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        video.final-video { width: 100%; border-radius: 8px; }
+        .dl-link { background: #238636; color: white; text-decoration: none; padding: 10px; border-radius: 8px; display: block; margin-top: 10px; font-size: 13px; font-weight: bold; }
+
+        /* --- SEO & INFO STYLES (১০০% অপরিবর্তিত) --- */
+        .seo-container { max-width: 850px; margin: 60px auto; text-align: left; padding: 20px; border-top: 1px solid #30363d; }
+        .seo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; margin-top: 40px; }
+        .seo-box { background: #161b22; padding: 25px; border-radius: 20px; border: 1px solid #30363d; transition: 0.3s; }
+        .seo-box:hover { border-color: var(--primary); transform: translateY(-5px); }
+        .seo-box h3 { color: var(--primary); margin-top: 0; font-size: 19px; display: flex; align-items: center; gap: 10px; }
+        .seo-box p { color: #8b949e; font-size: 14px; line-height: 1.6; margin-bottom: 0; }
+        
+        .steps-wrapper { background: #0d1117; padding: 40px; border-radius: 25px; margin-top: 40px; border: 1px solid #21262d; }
+        .step-card { display: flex; gap: 20px; margin-bottom: 25px; align-items: flex-start; }
+        .step-count { width: 35px; height: 35px; background: var(--primary); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; flex-shrink: 0; }
+        .step-info h4 { margin: 0 0 5px 0; color: #fff; font-size: 17px; }
+        .step-info p { margin: 0; color: #8b949e; font-size: 14px; }
+
+        .footer-copyright { margin: 80px 0 40px; padding-top: 20px; text-align: center; font-size: 14px; color: #8b949e; letter-spacing: 0.5px; }
+        .footer-copyright b { color: #484f58; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<div class="app-card">
+    <h2>🎬 Klypzo Video Editor</h2>
+    
+    <div class="upload-section">
+        <label style="margin-bottom: 10px; color: var(--primary); letter-spacing: 1px;">SELECT VIDEO FILE</label>
+        <input type="file" id="videoInput" accept="video/*" style="text-align: center;">
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+        <div class="input-box" style="flex: 1;">
+            <label>TOP CAPTION & COLOR</label>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="topText" placeholder="Header text">
+                <input type="color" id="topTextColor" value="#ffffff">
+            </div>
+        </div>
+        <div class="input-box" style="flex: 1;">
+            <label>BOTTOM CAPTION</label>
+            <div style="display: flex; gap: 5px;">
+                <input type="text" id="bottomText" placeholder="Footer text">
+                <input type="color" id="bottomTextColor" value="#ffffff">
+            </div>
+        </div>
+    </div>
+
+    <label style="text-align: left; font-size: 11px; color: #8b949e; display: block;">ANIMATED BUTTON OPTIONS:</label>
+    <div class="btn-panel">
+        <label><input type="checkbox" id="ytOptions"> YouTube Pack</label>
+        <label><input type="checkbox" id="fbOptions"> Facebook Pack</label>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+        <div class="input-box" style="flex: 1.5;">
+            <label>VIDEO MODE</label>
+            <select id="videoMode">
+                <option value="shorts">Shorts (9:16)</option>
+                <option value="long">Long (16:9)</option>
+            </select>
+        </div>
+        <div class="input-box" style="flex: 1;">
+            <label>CLIPS COUNT</label>
+            <input type="number" id="clipCount" value="3" min="1" max="50">
+        </div>
+    </div>
+
+    <div class="input-box">
+        <label>DURATION (SECONDS)</label>
+        <select id="clipDuration">
+            <option value="15">15 Seconds</option>
+            <option value="30">30 Seconds</option>
+            <option value="60">60 Seconds</option>
+        </select>
+    </div>
+
+    <button id="startBtn" disabled>START EDITING</button>
+
+    <div class="progress-area" id="progressArea">
+        <div class="track"><div class="bar-fill" id="barFill"></div></div>
+        <div id="status" style="font-size: 12px; margin-top: 8px; color: #8b949e;">Ready to process...</div>
+    </div>
+
+    <div id="focusArea">
+        <div class="nav-btns">
+            <button id="pStart">START</button>
+            <button id="pMid">MIDDLE</button>
+            <button id="pEnd">END</button>
+        </div>
+        <div class="preview-container" id="pContainer">
+            <video id="previewVideo" muted playsinline></video>
+        </div>
+        <div class="slider-group">
+            <div class="slider-item">
+                <label>POSITION <span>LEFT - RIGHT</span></label>
+                <input type="range" id="posSlider" value="50" min="0" max="100">
+            </div>
+            <div class="slider-item">
+                <label>ZOOM <span>OUT - IN</span></label>
+                <input type="range" id="zoomSlider" value="100" min="50" max="250">
+            </div>
+        </div>
+    </div>
+
+    <canvas id="exportCanvas" style="display:none;"></canvas>
+    <video id="hiddenSource" muted style="display:none;" playsinline></video>
+    <div class="output-grid" id="outputGrid"></div>
+</div>
+</div>
+</br>
+<div class="seo-container">
+    <div style="text-align: center; margin-bottom: 40px;">
+        <h1 style="font-size: 28px; color: #fff;">Viral Video Automation Engine</h1>
+        <p style="color: #8b949e;">Scale your social media growth by converting horizontal videos into perfect shorts.</p>
+    </div>
+    
+
+    <div class="seo-grid">
+        <div class="seo-box">
+            <h3>⚡ Instant Rendering</h3>
+            <p>Our client-side processing means you don't have to wait for server uploads. Everything happens fast and privately.</p>
+        </div>
+        <div class="seo-box">
+            <h3>🎯 Precision Framing</h3>
+            <p>The manual focus system allows you to capture exactly what matters, ensuring high-quality engagement on every clip.</p>
+        </div>
+        <div class="seo-box">
+            <h3>📱 Multi-Platform Ready</h3>
+            <p>Export multiple versions optimized for TikTok, Reels, and YouTube Shorts in one single click.</p>
+        </div>
+    </div>
+
+    <div class="steps-wrapper">
+        <h2 style="text-align: center; margin-bottom: 35px; color: var(--primary); font-size: 20px;">The Klypzo Workflow</h2>
+        
+        <div class="step-card">
+            <div class="step-count">1</div>
+            <div class="step-info">
+                <h4>Smart Framing</h4>
+                <p>Adjust the position and zoom sliders to find the perfect focus point for your vertical content.</p>
+            </div>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-count">2</div>
+            <div class="step-info">
+                <h4>Dynamic Branding</h4>
+                <p>Add custom headers and footers along with animated subscribe and follow triggers.</p>
+            </div>
+        </div>
+        
+        <div class="step-card">
+            <div class="step-count">3</div>
+            <div class="step-info">
+                <h4>Auto-Clip Processing</h4>
+                <p>Sit back while our engine creates your requested number of clips sequentially for maximum efficiency.</p>
+            </div>
+        </div>
+    </div>
+</div></div></div></div></div></div></div></div></div></div></div></div>
+    <div class="footer-copyright">
+        © 2026 <b>Klypzo</b> | Designed by <b>RAFID AHAMMED</b>
+    </div>
+</div>
+
+<script>
+    const videoInput = document.getElementById('videoInput');
+    const startBtn = document.getElementById('startBtn');
+    const barFill = document.getElementById('barFill');
+    const progressArea = document.getElementById('progressArea');
+    const status = document.getElementById('status');
+    const previewVideo = document.getElementById('previewVideo');
+    const hiddenSource = document.getElementById('hiddenSource');
+    const exportCanvas = document.getElementById('exportCanvas');
+    const ctx = exportCanvas.getContext('2d', { alpha: false });
+    const outputGrid = document.getElementById('outputGrid');
+    const focusArea = document.getElementById('focusArea');
+    const posSlider = document.getElementById('posSlider');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const videoMode = document.getElementById('videoMode');
+
+    let currentX = 0, currentZoom = 1;
+    let wakeLock = null; 
+
+    videoInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const url = URL.createObjectURL(file);
+            previewVideo.src = url;
+            hiddenSource.src = url;
+            focusArea.style.display = 'block';
+            startBtn.disabled = false;
+        }
+    };
+
+    async function requestWakeLock() {
+        try { if ('wakeLock' in navigator) { wakeLock = await navigator.wakeLock.request('screen'); }
+        } catch (err) { console.error(`${err.name}, ${err.message}`); }
+    }
+
+    function syncFrame() {
+        const vW = previewVideo.videoWidth;
+        const vH = previewVideo.videoHeight;
+        if (!vW) return;
+        const mode = videoMode.value;
+        if (mode === 'shorts') {
+            document.getElementById('pContainer').style.aspectRatio = "9/16";
+            const zoomVal = zoomSlider.value / 100;
+            previewVideo.style.height = (zoomVal * 100) + "%";
+            const visibleWidth = vH * (9/16) / zoomVal;
+            const maxPos = vW - visibleWidth;
+            posSlider.max = Math.max(1, maxPos);
+            const scale = document.getElementById('pContainer').offsetHeight / (vH * zoomVal);
+            previewVideo.style.left = `calc(50% - ${ (posSlider.value - maxPos / 2) * scale }px)`;
+            currentX = posSlider.value;
+            currentZoom = zoomVal;
+        } else {
+            document.getElementById('pContainer').style.aspectRatio = "16/9";
+            previewVideo.style.height = "100%";
+            previewVideo.style.left = "50%";
+            posSlider.disabled = true;
+        }
+    }
+
+    function wrapText(context, text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+        for (let n = 0; n < words.length; n++) {
+            let testLine = line + words[n] + ' ';
+            let metrics = context.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+                context.fillText(line, x, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+            } else { line = testLine; }
+        }
+        context.fillText(line, x, y);
+    }
+
+    // বাটনগুলোর পজিশন ক্যালকুলেশন আপডেট (বাকি সব কোড সেম)
+    function drawAnimatedButtons(context, canvasW, canvasH, time) {
+        const scale = 1 + Math.sin(time * 0.01) * 0.05; 
+        const btnW = 160;
+        const btnH = 60;
+        const margin = 25;
+        const bottomY = canvasH - margin - (btnH/2); // একেবারে নিচে
+
+        context.textBaseline = "middle";
+        context.textAlign = "center";
+        context.font = "bold 24px Arial";
+
+        // YouTube Pack
+        if(document.getElementById('ytOptions').checked) {
+            // বাম পাশে SUBSCRIBE
+            context.save();
+            context.translate(margin + btnW/2, bottomY);
+            context.scale(scale, scale);
+            context.fillStyle = "red"; context.fillRect(-btnW/2, -btnH/2, btnW, btnH);
+            context.fillStyle = "white"; context.fillText("SUBSCRIBE", 0, 0);
+            context.restore();
+
+            // ডান পাশে LIKE
+            context.save();
+            context.translate(canvasW - margin - btnW/2, bottomY);
+            context.scale(scale, scale);
+            context.fillStyle = "#3b5998"; context.fillRect(-btnW/2, -btnH/2, btnW, btnH);
+            context.fillStyle = "white"; context.fillText("LIKE", 0, 0);
+            context.restore();
+        }
+
+        // Facebook Pack
+        if(document.getElementById('fbOptions').checked) {
+            // বাম পাশে FOLLOW
+            context.save();
+            context.translate(margin + btnW/2, bottomY);
+            context.scale(scale, scale);
+            context.fillStyle = "#1877F2"; context.fillRect(-btnW/2, -btnH/2, btnW, btnH);
+            context.fillStyle = "white"; context.fillText("FOLLOW", 0, 0);
+            context.restore();
+
+            // ডান পাশে SHARE
+            context.save();
+            context.translate(canvasW - margin - btnW/2, bottomY);
+            context.scale(scale, scale);
+            context.fillStyle = "#25D366"; context.fillRect(-btnW/2, -btnH/2, btnW, btnH);
+            context.fillStyle = "white"; context.fillText("SHARE", 0, 0);
+            context.restore();
+        }
+    }
+
+    posSlider.oninput = syncFrame;
+    zoomSlider.oninput = syncFrame;
+    videoMode.onchange = syncFrame;
+    previewVideo.onloadedmetadata = () => { previewVideo.pause(); syncFrame(); };
+
+    document.getElementById('pStart').onclick = () => { previewVideo.currentTime = 0; previewVideo.pause(); };
+    document.getElementById('pMid').onclick = () => { previewVideo.currentTime = previewVideo.duration / 2; previewVideo.pause(); };
+    document.getElementById('pEnd').onclick = () => { previewVideo.currentTime = previewVideo.duration - 1; previewVideo.pause(); };
+    previewVideo.onseeked = syncFrame;
+
+    startBtn.onclick = async () => {
+        await requestWakeLock(); 
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        const duration = parseInt(document.getElementById('clipDuration').value);
+        const count = parseInt(document.getElementById('clipCount').value);
+        const topTxt = document.getElementById('topText').value;
+        const bottomTxt = document.getElementById('bottomText').value;
+        const topCol = document.getElementById('topTextColor').value;
+        const bottomCol = document.getElementById('bottomTextColor').value;
+
+        startBtn.disabled = true;
+        progressArea.style.display = 'block';
+        outputGrid.innerHTML = '';
+        exportCanvas.width = 720; exportCanvas.height = 1280;
+
+        for (let i = 0; i < count; i++) {
+            const startTime = Math.random() * (hiddenSource.duration - duration);
+            hiddenSource.currentTime = startTime;
+            await new Promise(r => hiddenSource.onseeked = r);
+
+            status.innerText = `Processing Clip ${i + 1}/${count}...`;
+            const stream = exportCanvas.captureStream(60);
+            const aSource = audioCtx.createMediaElementSource(hiddenSource);
+            const dest = audioCtx.createMediaStreamDestination();
+            aSource.connect(dest);
+
+            const recorder = new MediaRecorder(new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]), { 
+                mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 15000000 
+            });
+
+            const chunks = [];
+            recorder.ondataavailable = e => chunks.push(e.data);
+            const recordPromise = new Promise(r => recorder.onstop = () => r(new Blob(chunks, { type: 'video/webm' })));
+
+            recorder.start();
+            hiddenSource.muted = false; 
+            await hiddenSource.play();
+
+            let startTimeMs = performance.now();
+            const render = (now) => {
+                if (!hiddenSource.paused && !hiddenSource.ended) {
+                    ctx.fillStyle = "#000";
+                    ctx.fillRect(0, 0, 720, 1280);
+                    const vH = hiddenSource.videoHeight;
+                    const sw = (vH * (9/16)) / currentZoom;
+                    const sh = vH / currentZoom;
+                    const sy = (vH - sh) / 2;
+                    ctx.drawImage(hiddenSource, currentX, sy, sw, sh, 0, 0, 720, 1280);
+                    
+                    ctx.textAlign = "center";
+                    if(topTxt) {
+                        ctx.fillStyle = topCol;
+                        ctx.font = "bold 50px Arial";
+                        wrapText(ctx, topTxt, 360, 100, 650, 60);
+                    }
+                    if(bottomTxt) {
+                        ctx.fillStyle = bottomCol;
+                        ctx.font = "bold 50px Arial";
+                        wrapText(ctx, bottomTxt, 360, 1100, 650, 60);
+                    }
+
+                    drawAnimatedButtons(ctx, 720, 1280, now - startTimeMs);
+
+                    barFill.style.width = ((hiddenSource.currentTime - startTime) / duration * 100) + "%";
+                    requestAnimationFrame(render);
+                }
+            };
+            requestAnimationFrame(render);
+
+            await new Promise(r => setTimeout(r, duration * 1000));
+            hiddenSource.pause(); 
+            recorder.stop();
+            hiddenSource.muted = true;
+            
+            const blob = await recordPromise;
+            const url = URL.createObjectURL(blob);
+            const div = document.createElement('div');
+            div.className = 'clip-box';
+            div.innerHTML = `<video src="${url}" controls class="final-video"></video><a href="${url}" download="Clip_${i+1}.webm" class="dl-link">⬇️ Download Clip ${i+1}</a>`;
+            outputGrid.appendChild(div);
+            aSource.disconnect();
+        }
+        
+        if (wakeLock) { await wakeLock.release(); wakeLock = null; }
+        status.innerText = "✅ All Clips Completed!";
+        status.style.color = "#4ade80";
+        startBtn.disabled = false;
+    };
+</script>
+</body>
+</html>
