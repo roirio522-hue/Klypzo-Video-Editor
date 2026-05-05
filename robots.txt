@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /temp/
+Disallow: /private/
+
+# Sitemaps
+Sitemap: https://roirio522-hue.github.io/Klypzo-Video-Editor/sitemap.xml
+
+# Crawl Delay
+Crawl-delay: 1
