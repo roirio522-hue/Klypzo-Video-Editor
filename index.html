@@ -254,6 +254,7 @@
 
     let currentX = 0, currentZoom = 1;
     let wakeLock = null; 
+    let audioCtx = null;
 
     videoInput.onchange = (e) => {
         const file = e.target.files[0];
@@ -337,8 +338,12 @@
     document.getElementById('pMid').onclick = () => previewVideo.currentTime = previewVideo.duration / 2;
     document.getElementById('pEnd').onclick = () => previewVideo.currentTime = previewVideo.duration - 1;
 
+    // ক্লিপ তৈরির মূল লজিক (নিখুঁত সমাধান)
     startBtn.onclick = async () => {
         await requestWakeLock();
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') await audioCtx.resume();
+
         const count = parseInt(document.getElementById('clipCount').value);
         const duration = parseInt(document.getElementById('clipDuration').value);
         const topTxt = document.getElementById('topText').value;
@@ -346,69 +351,100 @@
         const topCol = document.getElementById('topTextColor').value;
         const bottomCol = document.getElementById('bottomTextColor').value;
 
-        startBtn.disabled = true; progressArea.style.display = 'block';
+        startBtn.disabled = true; 
+        progressArea.style.display = 'block';
         outputGrid.innerHTML = '';
         exportCanvas.width = 720; exportCanvas.height = 1280;
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Sequential processing using a loop that waits for each clip to finish
+        // সাউন্ড স্পিকারে না বাজিয়ে ভিডিওতে ক্যাপচার করার জন্য গেইন নোড
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.value = 0; // এটি করলে আপনি শুনবেন না (Mute), কিন্তু রেকর্ডারে যাবে
+        gainNode.connect(audioCtx.destination);
+
+        const sourceNode = audioCtx.createMediaElementSource(hiddenSource);
+        const dest = audioCtx.createMediaStreamDestination();
+        sourceNode.connect(dest);
+        sourceNode.connect(gainNode);
+
+        // ধারাবাহিক ক্লিপ তৈরির লুপ
         for (let i = 0; i < count; i++) {
-            status.innerText = `Processing Clip ${i + 1}/${count}...`;
+            status.innerText = `🔄 Processing Clip ${i + 1} of ${count}...`;
             barFill.style.width = "0%";
 
-            const startTime = Math.random() * (hiddenSource.duration - duration);
+            const startTime = Math.random() * Math.max(0, (hiddenSource.duration - duration));
             hiddenSource.currentTime = startTime;
-            await new Promise(r => hiddenSource.onseeked = r);
+            
+            await new Promise(r => {
+                const onSeeked = () => {
+                    hiddenSource.removeEventListener('seeked', onSeeked);
+                    r();
+                };
+                hiddenSource.addEventListener('seeked', onSeeked);
+            });
 
             const stream = exportCanvas.captureStream(30);
-            const dest = audioCtx.createMediaStreamDestination();
-            const source = audioCtx.createMediaElementSource(hiddenSource);
-            source.connect(dest);
-            source.connect(audioCtx.destination);
+            const combinedStream = new MediaStream([
+                ...stream.getVideoTracks(),
+                ...dest.stream.getAudioTracks()
+            ]);
 
-            const recorder = new MediaRecorder(new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]), { mimeType: 'video/webm;codecs=vp9' });
+            const recorder = new MediaRecorder(combinedStream, { 
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 8000000 
+            });
+
             const chunks = [];
             recorder.ondataavailable = e => chunks.push(e.data);
             
-            const recordFinish = new Promise(resolve => {
+            const recordPromise = new Promise(resolve => {
                 recorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }));
             });
 
             recorder.start();
-            hiddenSource.muted = false;
+            hiddenSource.muted = false; // হার্ডওয়্যার লেভেলে আনমিউট যাতে অডিও নোডে সাউন্ড যায়
             await hiddenSource.play();
 
             const startTimeMs = performance.now();
-            const renderFrame = (now) => {
-                if (!hiddenSource.paused && hiddenSource.currentTime < (startTime + duration)) {
-                    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 720, 1280);
-                    const vH = hiddenSource.videoHeight;
-                    const sw = (vH * (9/16)) / currentZoom;
-                    const sh = vH / currentZoom;
-                    ctx.drawImage(hiddenSource, currentX, (vH - sh) / 2, sw, sh, 0, 0, 720, 1280);
-                    ctx.textAlign = "center";
-                    if(topTxt) { ctx.fillStyle = topCol; ctx.font = "bold 50px Arial"; wrapText(ctx, topTxt, 360, 100, 650, 60); }
-                    if(bottomTxt) { ctx.fillStyle = bottomCol; ctx.font = "bold 50px Arial"; wrapText(ctx, bottomTxt, 360, 1100, 650, 60); }
-                    drawAnimatedButtons(ctx, 720, 1280, now - startTimeMs);
-                    barFill.style.width = ((hiddenSource.currentTime - startTime) / duration * 100) + "%";
-                    requestAnimationFrame(renderFrame);
-                } else {
-                    hiddenSource.pause();
-                    recorder.stop();
-                }
-            };
-            requestAnimationFrame(renderFrame);
+            
+            await new Promise(resolve => {
+                const renderFrame = (now) => {
+                    const elapsed = (hiddenSource.currentTime - startTime);
+                    if (!hiddenSource.paused && elapsed < duration && !hiddenSource.ended) {
+                        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 720, 1280);
+                        const vH = hiddenSource.videoHeight;
+                        const sw = (vH * (9/16)) / currentZoom;
+                        const sh = vH / currentZoom;
+                        ctx.drawImage(hiddenSource, currentX, (vH - sh) / 2, sw, sh, 0, 0, 720, 1280);
+                        
+                        ctx.textAlign = "center";
+                        if(topTxt) { ctx.fillStyle = topCol; ctx.font = "bold 50px Arial"; wrapText(ctx, topTxt, 360, 100, 650, 60); }
+                        if(bottomTxt) { ctx.fillStyle = bottomCol; ctx.font = "bold 50px Arial"; wrapText(ctx, bottomTxt, 360, 1100, 650, 60); }
+                        
+                        drawAnimatedButtons(ctx, 720, 1280, now - startTimeMs);
+                        barFill.style.width = Math.min(100, (elapsed / duration * 100)) + "%";
+                        requestAnimationFrame(renderFrame);
+                    } else {
+                        hiddenSource.pause();
+                        recorder.stop();
+                        resolve();
+                    }
+                };
+                requestAnimationFrame(renderFrame);
+            });
 
-            const blob = await recordFinish;
-            source.disconnect();
+            const blob = await recordPromise;
             const url = URL.createObjectURL(blob);
             const div = document.createElement('div');
             div.className = 'clip-box';
-            div.innerHTML = `<video src="${url}" controls class="final-video"></video><a href="${url}" download="Clip_${i+1}.webm" class="dl-link">⬇️ Download Clip ${i+1}</a>`;
+            div.innerHTML = `<video src="${url}" controls class="final-video"></video><a href="${url}" download="Klypzo_Clip_${i+1}.webm" class="dl-link">⬇️ Download Clip ${i+1}</a>`;
             outputGrid.appendChild(div);
         }
+
+        sourceNode.disconnect();
+        gainNode.disconnect();
         if (wakeLock) { await wakeLock.release(); wakeLock = null; }
-        status.innerText = "✅ All Clips Completed!";
+        status.innerText = "✅ Done! All " + count + " clips are ready.";
+        status.style.color = "#00f2fe";
         startBtn.disabled = false;
     };
 </script>
